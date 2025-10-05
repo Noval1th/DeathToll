@@ -313,10 +313,10 @@ end
 
 -- Initialize event handlers
 function DeathToll.init()
-    print("=" * 50)
+    print(string.rep("=", 50))
     print("[DeathToll] Initializing Discord Events Tracker")
     print("[DeathToll] Version 1.0")
-    print("=" * 50)
+    print(string.rep("=", 50))
     
     Events.OnPlayerDeath.Add(DeathToll.onPlayerDeath)
     Events.LevelPerk.Add(DeathToll.onLevelPerk)
@@ -330,10 +330,23 @@ function DeathToll.init()
     print(string.format("[DeathToll] Log file: Zomboid/Lua/%s", DeathToll.LOG_FILE))
     print("[DeathToll] Events: Death, Level-Up, Character Creation, Login, Sunrise/Sunset, Daily Reports")
     print("[DeathToll] Initialization complete!")
-    print("=" * 50)
+    print(string.rep("=", 50))
 end
 
 -- Start the mod when the game boots
-Events.OnGameBoot.Add(DeathToll.init)
+Events.OnServerStarted.Add(function()
+    print("[DeathToll] OnServerStarted fired")
+    DeathToll.init()
+end)
+
+Events.OnInitGlobalModData.Add(function()
+    print("[DeathToll] OnInitGlobalModData fired")
+    DeathToll.init()
+end)
+
+-- As absolute fallback, run immediately
+-- Comment this out later once events work
+-- DeathToll.init()
+
 
 return DeathToll
