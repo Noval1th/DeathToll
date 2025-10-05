@@ -1,169 +1,405 @@
-# DeathToll
-A Mod for Project Zomboid that collects data via a LUA mod into an easily parsible log file, and can then be shared to discord using  an extrenal python script
+# 🎮 DeathToll - Discord Events Tracker
 
-# Discord Events Tracker - Installation & Setup Guide
+## 📁 Complete Mod Structure
 
-## 📁 Mod Structure
-
-Create this folder structure in your Project Zomboid mods directory:
+Create this exact folder structure:
 
 ```
-DiscordEventsTracker/
+DeathToll/
 ├── mod.info
 └── media/
     └── lua/
         └── server/
-            └── DiscordEvents.lua
+            └── DeathToll.lua
 ```
 
-### mod.info
+## 📄 File Contents
+
+### 1. mod.info
+
+Create `DeathToll/mod.info`:
+
 ```
-name=Discord Events Tracker
-id=DiscordEventsTracker
-description=Tracks server events and outputs them to a log file for Discord integration
+name=DeathToll
+id=DeathToll
+description=Tracks server events and outputs them to a log file for Discord integration. Monitors deaths, respawns, level-ups, logins, and day/night cycles.
 poster=poster.png
+require=
 ```
 
-### File Locations
+**Optional:** Add a `poster.png` (512x512) image in the root folder for Workshop appearance.
 
-**Development/Testing:**
-- Workshop mod location: `Steam/steamapps/workshop/content/108600/[mod_id]/`
-- Local mod location: `%UserProfile%/Zomboid/mods/DiscordEventsTracker/`
+### 2. DeathToll.lua
 
-**Server Installation:**
-- Subscribe to the mod in Steam Workshop (if published)
-- Or manually place in server's mods directory
-- Enable in server's `-mod=` startup parameter
-
-**Log File Output:**
-- Windows: `C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\Lua\discord_events.log`
-- Linux: `/home/[USERNAME]/Zomboid/Server/[SERVER_NAME]/Lua/discord_events.log`
-
-## 🔧 Python Script Setup
-
-### 1. Update Your FTP Paths
-
-Add to your monitoring paths in `main.py`:
-
-```python
-# In get_log_folders_to_check(), also check Lua folder:
-def get_lua_folder_path(ftp):
-    """Get path to Lua folder where mod writes logs"""
-    # This is typically at the same level as Logs
-    return "/Lua"  # Adjust based on your FTP structure
+The Lua code is in the artifact above. Place it at:
+```
+DeathToll/media/lua/server/DeathToll.lua
 ```
 
-### 2. Add Discord Events Monitoring
+**Important:** The file MUST be in the `server/` subdirectory, not `shared/` or `client/`.
 
-In your `monitor_server()` function, add this after the PerkLog monitoring:
+## 🚀 Installation Methods
 
-```python
-# Monitor mod's discord events log
-try:
-    lua_folder = "/Lua"  # Adjust to your server's path
-    monitor_discord_events_log(ftp, lua_folder)
-except Exception as e:
-    print(f"⚠️ Error processing discord events: {e}")
+### Method 1: Local Installation (Testing)
+
+1. **Find your mods folder:**
+   - **Windows:** `C:\Users\[USERNAME]\Zomboid\mods\`
+   - **Linux:** `~/Zomboid/mods/`
+
+2. **Copy the entire `DeathToll/` folder there**
+
+3. **Enable the mod in server startup:**
+   ```bash
+   -mod=DeathToll
+   ```
+
+### Method 2: Server Installation
+
+1. **Place mod in server's mods directory:**
+   - **Windows:** `C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\mods\`
+   - **Linux:** `~/Zomboid/Server/[SERVER_NAME]/mods/`
+
+2. **Edit server startup script** (e.g., `StartServer64.bat` or `start-server.sh`)
+
+   Add to the Java command line:
+   ```
+   -mod=DeathToll
+   ```
+
+   **Example:**
+   ```bash
+   java.exe -Djava.awt.headless=true -Dzomboid.steam=1 \
+     -mod=DeathToll \
+     -Xms4g -Xmx8g -jar server.jar
+   ```
+
+### Method 3: Steam Workshop (For Distribution)
+
+1. **Create Workshop item** using the in-game Workshop tool
+
+2. **Upload your mod folder** with proper structure
+
+3. **Subscribe to your mod** on the server
+
+4. **Server will auto-download** the mod on startup
+
+## ✅ Verification Steps
+
+### Step 1: Check Server Console
+
+Start your server and look for these messages:
+
+```
+==================================================
+[DeathToll] Initializing Discord Events Tracker
+[DeathToll] Version 1.0
+==================================================
+[DeathToll] Log file: Zomboid/Lua/discord_events.log
+[DeathToll] Events: Death, Level-Up, Character Creation, Login, Sunrise/Sunset, Daily Reports
+[DeathToll] Initialization complete!
+==================================================
 ```
 
-### 3. Adjust Polling Interval (Optional)
+### Step 2: Verify Log File Creation
 
-For more real-time notifications:
+The log file should be created at:
 
-```python
-CHECK_INTERVAL = 10  # Changed from 30 to 10 seconds
+**Windows:**
+```
+C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\Lua\discord_events.log
 ```
 
-## 🎮 Testing the Mod
+**Linux:**
+```
+/home/[USERNAME]/Zomboid/Server/[SERVER_NAME]/Lua/discord_events.log
+```
 
-### 1. Install on Test Server
-1. Place mod files in mods directory
-2. Add to server startup: `-mod=DiscordEventsTracker`
-3. Start server and check console for: `[DiscordEvents] Discord Events Tracker initialized`
+**Note:** The file may not exist until the first event occurs!
 
-### 2. Verify Log File Creation
-Check that `discord_events.log` is created in:
-- Windows: `%UserProfile%/Zomboid/Server/[SERVER_NAME]/Lua/`
-- Linux: `~/Zomboid/Server/[SERVER_NAME]/Lua/`
+### Step 3: Trigger Test Event
 
-### 3. Trigger Test Events
-- **Death**: Kill a player character → Should log death event
-- **Level Up**: Gain a skill level → Should log level_up event
-- **Login**: Connect to server → Should log login event
-- **Sunrise/Sunset**: Wait for day/night cycle → Should log time events
+1. **Join the server**
+2. **Kill your character** (or gain a skill level)
+3. **Check the log file** for a JSON entry
 
-### 4. Check Log Format
-Events should look like this:
+**Expected log entry:**
 ```json
-{"timestamp":"2025-01-15 14:30:45","type":"death","data":{"username":"Player1","steam_id":"76561198012345678","hours_survived":24.5,"x":10500,"y":9000,"z":0,"skills":"Aiming=5,Fitness=3"}}
-{"timestamp":"2025-01-15 14:31:00","type":"sunrise","data":{"game_time":0.25,"light_level":0.35,"game_day":3}}
+{"timestamp":"2025-01-15 14:30:45","type":"death","data":{"username":"YourName","steam_id":"76561198012345678","hours_survived":0.5,"x":10500,"y":9000,"z":0,"skills":"Aiming=1"}}
+```
+
+## 🔧 Configuration
+
+### Adjust Sunrise/Sunset Thresholds
+
+Edit `DeathToll.lua` if sunrise/sunset triggers at wrong times:
+
+```lua
+DeathToll.SUNRISE_THRESHOLD = 0.3  -- Increase if triggering too early
+DeathToll.SUNSET_THRESHOLD = 0.2   -- Decrease if triggering too late
+```
+
+### Change Event Cooldown
+
+Prevent spam by adjusting cooldown (default: 1 hour):
+
+```lua
+DeathToll.EVENT_COOLDOWN = 3600  -- In game ticks (1 tick = ~1 second)
+```
+
+### Modify Check Frequency
+
+Day/night checks happen every 10 game minutes by default. To change:
+
+```lua
+-- In DeathToll.init(), change:
+Events.EveryTenMinutes.Add(DeathToll.checkDayNightCycle)
+
+-- To one of:
+Events.EveryOneMinute.Add(DeathToll.checkDayNightCycle)
+Events.EveryHours.Add(DeathToll.checkDayNightCycle)
+Events.EveryDays.Add(DeathToll.checkDayNightCycle)
 ```
 
 ## 🐛 Troubleshooting
 
-### Log File Not Created
-- Check server console for errors
-- Verify mod is loaded: Check server startup logs
-- Check file permissions on Lua directory
+### Issue: Mod not loading
 
-### Events Not Being Detected
-- Verify FTP path in Python script matches actual log location
-- Check Python console for parsing errors
-- Ensure `last_pos` tracking is working (check `file_positions` dict)
+**Check:**
+- [ ] Folder structure is correct (DeathToll/media/lua/server/)
+- [ ] File is named exactly `DeathToll.lua` (case-sensitive on Linux)
+- [ ] `-mod=DeathToll` is in server startup command
+- [ ] No syntax errors in Lua file
 
-### Duplicate Notifications
-- The mod includes event cooldowns for sunrise/sunset
-- Python script uses event deduplication via `last_events` set
-
-### Missing Events
-- Check that events are server-side only (mod only runs on server)
-- Verify event handlers are registered in console output
-- Enable debug mode by uncommenting print statements
-
-## 📊 Event Types Reference
-
-| Event Type | Triggers When | Data Included |
-|------------|---------------|---------------|
-| `death` | Player dies | username, hours_survived, coordinates, skills |
-| `level_up` | Player gains skill level | username, skill, level, hours_survived |
-| `character_created` | New character spawned | username, coordinates |
-| `login` | Player connects | username, hours_survived, skills |
-| `sunrise` | Light level crosses sunrise threshold | game_time, light_level, game_day |
-| `sunset` | Light level crosses sunset threshold | game_time, light_level, game_day |
-| `daily_survivors` | Every sunrise (auto-triggered) | game_day, survivor_count, survivors[] |
-| `leaderboard_request` | Admin command (future) | type, requested_by |
-
-## 🎯 Future Enhancements
-
-### Admin Commands
-Add in-game commands to trigger leaderboards:
-```lua
--- Example: /discord leaderboard death
--- Would need to implement command parsing
+**Debug:**
+```bash
+# Check server console for error messages
+# Look for lines starting with [DeathToll]
 ```
 
-### Configurable Settings
-Create `DiscordEventsConfig.lua`:
+### Issue: Log file not created
+
+**Check:**
+- [ ] Server has write permissions to Lua folder
+- [ ] At least one event has occurred (death, login, etc.)
+- [ ] Check server console for "[DeathToll] ERROR: Could not open log file"
+
+**Fix:**
+```bash
+# Manually create Lua directory if it doesn't exist
+mkdir -p ~/Zomboid/Server/[SERVER_NAME]/Lua
+
+# Set permissions (Linux)
+chmod 755 ~/Zomboid/Server/[SERVER_NAME]/Lua
+```
+
+### Issue: Events not logging
+
+**Check:**
+- [ ] Mod initialization message appeared in console
+- [ ] You're triggering events on the server (not singleplayer)
+- [ ] Player is actually on the server (not main menu)
+
+**Test manually:**
 ```lua
-DiscordEventsConfig = {
-    enableSunrise = true,
-    enableSunset = true,
-    enableDailyReport = true,
-    sunriseThreshold = 0.3,
-    sunsetThreshold = 0.2
+-- Add to DeathToll.init() for testing:
+DeathToll.writeEvent("test", {message = "Mod is working!"})
+```
+
+### Issue: Sunrise/Sunset not triggering
+
+**Possible causes:**
+- Server time is not progressing (paused or frozen)
+- Threshold values need adjustment
+- Server hasn't been running long enough for a full day cycle
+
+**Debug:**
+```lua
+-- Add to DeathToll.checkDayNightCycle():
+print(string.format("[DeathToll] Light level: %.3f", lightLevel))
+```
+
+### Issue: JSON parsing errors in Python
+
+**Check log file format:**
+```bash
+# View log file
+cat ~/Zomboid/Server/[SERVER_NAME]/Lua/discord_events.log
+
+# Check for malformed JSON
+python -m json.tool discord_events.log
+```
+
+**Common issues:**
+- Player names with special characters (quotes, backslashes)
+- Very long skill lists
+- Corrupted file (delete and let mod recreate)
+
+## 📊 Understanding the Log Format
+
+### Event Structure
+```json
+{
+  "timestamp": "YYYY-MM-DD HH:MM:SS",
+  "type": "event_type",
+  "data": {
+    // Event-specific data
+  }
 }
 ```
 
-### Additional Events
-- Player kill count milestones
-- Helicopter events
-- Meta events (temperature drops, etc.)
-- Custom server events
+### Event Types
 
-## 📝 Notes
+#### Death Event
+```json
+{
+  "timestamp": "2025-01-15 14:30:45",
+  "type": "death",
+  "data": {
+    "username": "Player1",
+    "steam_id": "76561198012345678",
+    "hours_survived": 24.5,
+    "x": 10500,
+    "y": 9000,
+    "z": 0,
+    "skills": "Aiming=5,Fitness=3,Strength=2"
+  }
+}
+```
 
-- **Performance**: The mod is lightweight and only writes to file on events
-- **File Size**: Log file grows over time; consider log rotation in Python
-- **Multiplayer**: Fully compatible, tracks all players
-- **Singleplayer**: Won't activate (server-side only)
-- **Compatibility**: Should work with most other mods (no conflicts expected)
+#### Level Up Event
+```json
+{
+  "timestamp": "2025-01-15 15:00:00",
+  "type": "level_up",
+  "data": {
+    "username": "Player1",
+    "steam_id": "76561198012345678",
+    "skill": "Aiming",
+    "level": 6,
+    "hours_survived": 25.0
+  }
+}
+```
+
+#### Character Created Event
+```json
+{
+  "timestamp": "2025-01-15 15:30:00",
+  "type": "character_created",
+  "data": {
+    "username": "Player1",
+    "steam_id": "76561198012345678",
+    "character_index": 0,
+    "x": 10600,
+    "y": 9100,
+    "z": 0
+  }
+}
+```
+
+#### Login Event
+```json
+{
+  "timestamp": "2025-01-15 16:00:00",
+  "type": "login",
+  "data": {
+    "username": "Player1",
+    "steam_id": "76561198012345678",
+    "hours_survived": 25.5,
+    "skills": "Aiming=6,Fitness=3,Strength=2,Cooking=2"
+  }
+}
+```
+
+#### Sunrise Event
+```json
+{
+  "timestamp": "2025-01-15 06:00:00",
+  "type": "sunrise",
+  "data": {
+    "game_time": 0.25,
+    "light_level": 0.35,
+    "game_day": 5
+  }
+}
+```
+
+#### Sunset Event
+```json
+{
+  "timestamp": "2025-01-15 18:00:00",
+  "type": "sunset",
+  "data": {
+    "game_time": 0.75,
+    "light_level": 0.15,
+    "game_day": 5
+  }
+}
+```
+
+#### Daily Survivors Event
+```json
+{
+  "timestamp": "2025-01-15 06:00:05",
+  "type": "daily_survivors",
+  "data": {
+    "game_day": 5,
+    "survivor_count": 3,
+    "survivors": [
+      {"username": "Player1", "hours": 25.5, "x": 10500, "y": 9000, "z": 0},
+      {"username": "Player2", "hours": 18.0, "x": 10600, "y": 9100, "z": 0},
+      {"username": "Player3", "hours": 12.0, "x": 10700, "y": 9200, "z": 0}
+    ]
+  }
+}
+```
+
+## 🔒 Security Notes
+
+- **No passwords or sensitive data** are logged
+- **Steam IDs are public** information and safe to log
+- **Player locations** are game coordinates (not real-world)
+- **Log file** should not be publicly accessible (configure FTP carefully)
+
+## 📈 Performance Impact
+
+- **Minimal** - Only writes to file on events
+- **File size** - Approximately 200-500 bytes per event
+- **Growth rate** - Depends on server activity
+  - Small server (5 players): ~1-2 MB/week
+  - Large server (50 players): ~10-20 MB/week
+
+**Log rotation recommendation:**
+- Implement in Python script
+- Or use Linux logrotate
+- Or manually archive/delete old logs
+
+## 🎯 Next Steps
+
+1. ✅ Install mod on server
+2. ✅ Verify log file creation
+3. ✅ Update Python script `DISCORD_LOG_PATH` environment variable
+4. ✅ Run Python script
+5. ✅ Test with a death or login
+6. ✅ Enjoy automated Discord notifications!
+
+## 📝 Version History
+
+**v1.0** (Current)
+- Initial release
+- Death tracking
+- Level-up tracking
+- Character creation tracking
+- Login tracking
+- Sunrise/sunset detection
+- Daily survivor reports
+
+**Future planned features:**
+- Admin commands for manual leaderboard requests
+- Configurable event cooldowns
+- Custom event filtering
+- Performance optimizations
+
+---
+
+**Need help? Check the main implementation guide or create an issue!** 🚀
