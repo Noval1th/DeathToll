@@ -40,7 +40,50 @@ DeathToll/media/lua/server/DeathToll.lua
 
 ## 🚀 Installation Methods
 
-### Method 1: Local Installation (Testing)
+### Method 1: G-Portal FTP Installation (Your Setup)
+
+**Your specific G-Portal directory structure:**
+```
+/Zomboid/
+├── /Server/
+│   └── servertest.ini
+├── /Saves/
+├── /mods/              ← Place DeathToll here
+└── /Logs/
+```
+
+**Installation steps:**
+
+1. **Connect to your server via FTP**
+   - FTP home directory starts at `/Zomboid/`
+
+2. **Check if `/mods/` folder exists**
+   - If not, create it manually in `/Zomboid/mods/`
+
+3. **Upload the entire `DeathToll/` folder to `/Zomboid/mods/`**
+   - Final structure: `/Zomboid/mods/DeathToll/`
+   - Inside should be: `mod.info` and `media/` folder
+
+4. **Edit `/Zomboid/Server/servertest.ini`**
+   - Find the line that starts with `Mods=`
+   - Add `DeathToll` to the list (semicolon-separated, no spaces)
+   
+   **Example:**
+   ```ini
+   Mods=DeathToll
+   
+   # Or if you have other mods:
+   Mods=ExistingMod;DeathToll;AnotherMod
+   ```
+
+5. **⚠️ IMPORTANT: Do NOT use G-Portal web control panel after this!**
+   - G-Portal's web interface **overwrites FTP changes**
+   - Make ALL future edits via FTP only
+   - Or keep a backup of `servertest.ini` to restore after using web panel
+
+6. **Restart the server**
+
+### Method 2: Local Installation (Testing)
 
 1. **Find your mods folder:**
    - **Windows:** `C:\Users\[USERNAME]\Zomboid\mods\`
@@ -48,32 +91,21 @@ DeathToll/media/lua/server/DeathToll.lua
 
 2. **Copy the entire `DeathToll/` folder there**
 
-3. **Enable the mod in server startup:**
-   ```bash
-   -mod=DeathToll
-   ```
+3. **Enable the mod in your save's configuration**
 
-### Method 2: Server Installation
+### Method 3: Other Hosting Providers
 
-1. **Place mod in server's mods directory:**
-   - **Windows:** `C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\mods\`
-   - **Linux:** `~/Zomboid/Server/[SERVER_NAME]/mods/`
+For other hosts (not G-Portal):
+- **Windows Self-Hosted:** `C:\Users\[USERNAME]\Zomboid\mods\`
+- **Linux Self-Hosted:** `~/Zomboid/mods/`
+- **Other Managed Hosts:** Check provider documentation for exact path
 
-2. **Edit server startup script** (e.g., `StartServer64.bat` or `start-server.sh`)
+Then edit `servertest.ini` to add:
+```ini
+Mods=DeathToll
+```
 
-   Add to the Java command line:
-   ```
-   -mod=DeathToll
-   ```
-
-   **Example:**
-   ```bash
-   java.exe -Djava.awt.headless=true -Dzomboid.steam=1 \
-     -mod=DeathToll \
-     -Xms4g -Xmx8g -jar server.jar
-   ```
-
-### Method 3: Steam Workshop (For Distribution)
+### Method 4: Steam Workshop (For Distribution)
 
 1. **Create Workshop item** using the in-game Workshop tool
 
@@ -85,7 +117,35 @@ DeathToll/media/lua/server/DeathToll.lua
 
 ## ✅ Verification Steps
 
-### Step 1: Check Server Console
+### Step 1: Verify File Structure via FTP
+
+Connect to FTP and confirm this exact structure:
+```
+/Zomboid/
+└── mods/
+    └── DeathToll/
+        ├── mod.info
+        └── media/
+            └── lua/
+                └── server/
+                    └── DeathToll.lua
+```
+
+### Step 2: Verify Configuration
+
+Open `/Zomboid/Server/servertest.ini` and confirm:
+```ini
+Mods=DeathToll
+# Or with other mods:
+Mods=YourOtherMod;DeathToll
+```
+
+**Note:** Make sure there are:
+- ✅ NO spaces after semicolons
+- ✅ NO semicolon at the end of the line
+- ✅ Exact capitalization: `DeathToll` (not `deathtoll` or `DEATHTOLL`)
+
+### Step 3: Check Server Console
 
 Start your server and look for these messages:
 
@@ -100,21 +160,40 @@ Start your server and look for these messages:
 ==================================================
 ```
 
-### Step 2: Verify Log File Creation
+### Step 4: Verify Log File Creation
 
 The log file should be created at:
 
-**Windows:**
+**For G-Portal (Your Setup):**
 ```
-C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\Lua\discord_events.log
-```
-
-**Linux:**
-```
-/home/[USERNAME]/Zomboid/Server/[SERVER_NAME]/Lua/discord_events.log
+/Zomboid/Lua/discord_events.log
 ```
 
-**Note:** The file may not exist until the first event occurs!
+**For Other Setups:**
+- **Windows:** `C:\Users\[USERNAME]\Zomboid\Server\[SERVER_NAME]\Lua\discord_events.log`
+- **Linux:** `/home/[USERNAME]/Zomboid/Server/[SERVER_NAME]/Lua/discord_events.log`
+
+**Note:** The `/Lua/` folder and log file may not exist until the first event occurs!
+
+### Step 5: Update Python Script Configuration
+
+In your Python script's environment variables, set:
+
+```bash
+# For G-Portal FTP access:
+DISCORD_LOG_PATH='/Lua/discord_events.log'
+
+# The path is relative to your FTP root, which is /Zomboid/
+```
+
+If the path doesn't work, try these alternatives:
+```bash
+DISCORD_LOG_PATH='/Zomboid/Lua/discord_events.log'
+# or
+DISCORD_LOG_PATH='Lua/discord_events.log'
+```
+
+Test by checking if your FTP client can navigate to and see the file!
 
 ### Step 3: Trigger Test Event
 
